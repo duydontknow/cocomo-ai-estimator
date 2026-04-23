@@ -1,0 +1,103 @@
+/* index.css — Design System Tokens */
+
+/* ── Google Fonts ─────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap");
+
+/* ── Dark Mode Variables ───────────────────────────────────── */
+:root {
+    --primary:          #6366f1;
+    --primary-hover:    #4f46e5;
+    --primary-light:    rgba(99, 102, 241, 0.15);
+    --secondary:        #0ea5e9;
+    --secondary-hover:  #0284c7;
+
+    --accent-green:     #22c55e;
+    --accent-yellow:    #f59e0b;
+    --accent-red:       #ef4444;
+    --accent-purple:    #a855f7;
+
+    --bg:               #0a0f1e;
+    --bg-secondary:     #0f172a;
+    --panel-bg:         #131b2e;
+    --panel-bg-2:       #1a2540;
+    --panel-border:     #1e2d45;
+    --panel-border-2:   #253351;
+    --panel-shadow:     0 4px 24px rgba(0, 0, 0, 0.4);
+    --panel-shadow-hov: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+    --text-main:        #e8edf5;
+    --text-muted:       #7a8aaa;
+    --text-dim:         #4a5568;
+
+    --input-bg:         #0f172a;
+    --input-border:     #253351;
+    --input-border-focus: var(--primary);
+
+    --chart-fill-1:     #6366f1;
+    --chart-fill-2:     #22d3ee;
+    --chart-fill-3:     #f59e0b;
+
+    /* Category colors */
+    --cat-product:      rgba(99,  102, 241, 0.08);
+    --cat-computer:     rgba(34,  211, 238, 0.08);
+    --cat-personnel:    rgba(168, 85,  247, 0.08);
+    --cat-project:      rgba(245, 158, 11,  0.08);
+
+    --cat-product-border:   rgba(99,  102, 241, 0.25);
+    --cat-computer-border:  rgba(34,  211, 238, 0.25);
+    --cat-personnel-border: rgba(168, 85,  247, 0.25);
+    --cat-project-border:   rgba(245, 158, 11,  0.25);
+
+    --cat-product-accent:   #6366f1;
+    --cat-computer-accent:  #22d3ee;
+    --cat-personnel-accent: #a855f7;
+    --cat-project-accent:   #f59e0b;
+
+    /* Risk colors */
+    --risk-high-bg:     rgba(239, 68, 68, 0.1);
+    --risk-high-border: rgba(239, 68, 68, 0.35);
+    --risk-med-bg:      rgba(245, 158, 11, 0.1);
+    --risk-med-border:  rgba(245, 158, 11, 0.35);
+    --risk-low-bg:      rgba(34, 197, 94, 0.1);
+    --risk-low-border:  rgba(34, 197, 94, 0.35);
+}
+
+/* ── Light Mode Variables ──────────────────────────────────── */
+[data-theme="light"] {
+    --bg:               #f1f5fb;
+    --bg-secondary:     #e8eef8;
+    --panel-bg:         #ffffff;
+    --panel-bg-2:       #f8faff;
+    --panel-border:     #dde3f0;
+    --panel-border-2:   #c8d0e7;
+    --panel-shadow:     0 2px 16px rgba(0, 0, 0, 0.08);
+    --panel-shadow-hov: 0 6px 24px rgba(0, 0, 0, 0.12);
+
+    --text-main:        #1a2035;
+    --text-muted:       #5a6a8a;
+    --text-dim:         #9aa0b5;
+
+    --input-bg:         #f4f7ff;
+    --input-border:     #dde3f0;
+
+    --cat-product:      rgba(99,  102, 241, 0.05);
+    --cat-computer:     rgba(34,  211, 238, 0.05);
+    --cat-personnel:    rgba(168, 85,  247, 0.05);
+    --cat-project:      rgba(245, 158, 11,  0.05);
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    background-color: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+#root { display: flex; flex-direction: column; min-height: 100vh; }

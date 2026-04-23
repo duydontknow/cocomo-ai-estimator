@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tài liệu Tổng hợp — COCOMO AI Estimator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #1e293b;
+    background: #fff;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 48px;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    text-align: center;
+    padding: 60px 0 50px;
+    border-bottom: 3px solid #6366f1;
+    margin-bottom: 48px;
+  }
+  .cover .badge {
+    display: inline-block;
+    background: #6366f1;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  .cover h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .cover h1 span { color: #6366f1; }
+  .cover .subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 28px;
+  }
+  .cover .meta {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .cover .meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .cover .meta-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+  .cover .meta-value { font-size: 12px; font-weight: 600; color: #475569; }
+
+  /* ── TOC ── */
+  .toc {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 48px;
+  }
+  .toc h2 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6366f1;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; color: #475569; font-size: 12.5px; }
+
+  /* ── Sections ── */
+  .section {
+    margin-bottom: 48px;
+    page-break-inside: avoid;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #6366f1;
+  }
+  .section-num {
+    background: #6366f1;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  /* ── Q&A Cards ── */
+  .qa { margin-bottom: 18px; page-break-inside: avoid; }
+  .question {
+    background: #6366f1;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px 6px 0 0;
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+  .answer {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    padding: 14px 16px;
+    font-size: 12.5px;
+    color: #334155;
+  }
+  .answer p { margin-bottom: 8px; }
+  .answer p:last-child { margin-bottom: 0; }
+  .answer ul, .answer ol { padding-left: 20px; margin: 8px 0; }
+  .answer li { margin: 4px 0; }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 12px;
+  }
+  th {
+    background: #1e293b;
+    color: #fff;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; color: #475569; }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* ── Code ── */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: #1e293b;
+    color: #7dd3fc;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  /* ── Callouts ── */
+  .callout {
+    border-left: 4px solid #6366f1;
+    padding: 10px 14px;
+    background: #f0f0ff;
+    border-radius: 0 6px 6px 0;
+    margin: 10px 0;
+    font-size: 12px;
+    color: #3730a3;
+  }
+  .callout-warn { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+  .callout-good { border-color: #10b981; background: #f0fdf4; color: #065f46; }
+  .callout-bad  { border-color: #ef4444; background: #fef2f2; color: #991b1b; }
+
+  /* ── Formula box ── */
+  .formula {
+    background: #0f172a;
+    color: #a5f3fc;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin: 10px 0;
+    line-height: 2;
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { padding: 20px 32px; font-size: 11.5px; }
+    .cover { padding: 40px 0 36px; }
+    .section { page-break-inside: avoid; }
+    .qa { page-break-inside: avoid; }
+    a { color: inherit; text-decoration: none; }
+  }
+
+  strong { color: #0f172a; }
+  em { color: #6366f1; font-style: normal; font-weight: 500; }
+
+  .tag {
+    display: inline-block;
+    background: #e0e7ff;
+    color: #4338ca;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin: 2px 2px;
+  }
+  .tag-red { background: #fee2e2; color: #991b1b; }
+  .tag-green { background: #dcfce7; color: #14532d; }
+  .tag-yellow { background: #fef9c3; color: #854d0e; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ COVER ══════════ -->
+<div class="cover">
+  <div class="badge">Tài liệu kỹ thuật</div>
+  <h1>COCOMO <span>AI</span> Estimator</h1>
+  <p class="subtitle">Hệ thống Ước lượng Nỗ lực Phần mềm Thông minh</p>
+  <div class="meta">
+    <div class="meta-item"><span class="meta-label">Mô hình</span><span class="meta-value">Intermediate COCOMO</span></div>
+    <div class="meta-item"><span class="meta-label">AI Engine</span><span class="meta-value">Gemini 2.5 Flash</span></div>
+    <div class="meta-item"><span class="meta-label">Backend</span><span class="meta-value">FastAPI (Python)</span></div>
+    <div class="meta-item"><span class="meta-label">Frontend</span><span class="meta-value">React 18 + Vite</span></div>
+    <div class="meta-item"><span class="meta-label">Ngày tạo</span><span class="meta-value">21/04/2026</span></div>
+  </div>
+</div>
+
+<!-- ══════════ TOC ══════════ -->
+<div class="toc">
+  <h2>Mục lục</h2>
+  <ol>
+    <li>Tổng quan dự án</li>
+    <li>Kiến trúc hệ thống</li>
+    <li>Mô hình toán học COCOMO</li>
+    <li>Tích hợp AI</li>
+    <li>Giao diện và trải nghiệm</li>
+    <li>Testing</li>
+    <li>Điểm mạnh và hạn chế</li>
+    <li>Câu hỏi khó có thể bị hỏi</li>
+    <li>Hướng phát triển</li>
+  </ol>
+</div>
+
+<!-- ══════════ 1. TỔNG QUAN ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <div class="section-title">Tổng quan dự án</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Dự án này làm gì?</div>
+    <div class="answer">
+      <p>Đây là hệ thống ước lượng nỗ lực phát triển phần mềm, sử dụng mô hình toán học <strong>Intermediate COCOMO</strong> (Constructive Cost Model) kết hợp với <strong>AI (Gemini)</strong> để hỗ trợ nhà quản lý dự án ước tính:</p>
+      <ul>
+        <li><strong>Effort</strong> — Số person-months cần thiết</li>
+        <li><strong>TDEV</strong> — Thời gian phát triển (months)</li>
+        <li><strong>Cost</strong> — Tổng chi phí (USD)</li>
+        <li><strong>Staff</strong> — Số nhân sự cần đồng thời</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Tại sao chọn đề tài này?</div>
+    <div class="answer">
+      <p>Ước lượng nỗ lực phần mềm là một trong những bài toán khó và quan trọng nhất trong quản lý dự án. Sai số trong ước lượng dẫn đến overrun ngân sách và trễ deadline. COCOMO là model được kiểm chứng từ 1981, nhưng việc chọn 15 cost drivers thủ công rất chủ quan → tích hợp AI để <em>giảm thiểu sự chủ quan</em> này một cách có hệ thống.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Công nghệ sử dụng?</div>
+    <div class="answer">
+      <table>
+        <tr><th>Tầng</th><th>Công nghệ</th><th>Mục đích</th></tr>
+        <tr><td>Frontend</td><td>React 18 + Vite, Recharts, Axios</td><td>Giao diện, biểu đồ, gọi API</td></tr>
+        <tr><td>Backend</td><td>FastAPI (Python), Pydantic</td><td>REST API, validation, logic</td></tr>
+        <tr><td>AI</td><td>Google Gemini 2.5 Flash</td><td>Suggest, Advise, Chat</td></tr>
+        <tr><td>Testing</td><td>Pytest</td><td>Unit test COCOMO engine</td></tr>
+        <tr><td>Config</td><td>python-dotenv</td><td>Quản lý API key (.env)</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 2. KIẾN TRÚC ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <div class="section-title">Kiến trúc hệ thống</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Kiến trúc hệ thống được tổ chức như thế nào?</div>
+    <div class="answer">
+      <p>Hệ thống theo mô hình <strong>Client-Server</strong> 2 tầng:</p>
+      <ul>
+        <li><strong>Frontend</strong> (React, port 5173): Giao diện người dùng, quản lý state</li>
+        <li><strong>Backend</strong> (FastAPI, port 8000): Xử lý logic, tính toán, gọi Gemini API</li>
+        <li>Hai tầng giao tiếp qua <strong>REST API</strong> (JSON over HTTP), CORS được cấu hình sẵn</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Backend được tổ chức như thế nào?</div>
+    <div class="answer">
+      <pre><code>backend/
+├── main.py        # FastAPI app + định nghĩa 5 endpoints
+├── schemas.py     # Pydantic models — validation dữ liệu đầu vào
+└── services/
+    ├── cocomo.py  # Engine tính Intermediate COCOMO
+    ├── ai.py      # Tích hợp Gemini (3 chức năng)
+    └── risk.py    # Phân tích rủi ro rule-based</code></pre>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Frontend được tổ chức như thế nào?</div>
+    <div class="answer">
+      <pre><code>frontend/src/
+├── App.jsx              # Root component, state management toàn cục
+├── App.css              # Design system (CSS variables, dark/light theme)
+└── components/
+    ├── ProjectSetup.jsx      # Nhập KLOC/FP, mode, lương, mô tả
+    ├── CostDriverPanel.jsx   # Config 15 cost drivers + AI Suggest
+    ├── ResultsDashboard.jsx  # Biểu đồ + metric cards + risk panel
+    └── AIChatbot.jsx         # Chatbot multi-turn</code></pre>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Có bao nhiêu API endpoint?</div>
+    <div class="answer">
+      <table>
+        <tr><th>Method</th><th>Endpoint</th><th>Chức năng</th></tr>
+        <tr><td><code>GET</code></td><td><code>/api/health</code></td><td>Kiểm tra server</td></tr>
+        <tr><td><code>POST</code></td><td><code>/api/estimate/cocomo</code></td><td>Tính toán COCOMO + Risk Analysis</td></tr>
+        <tr><td><code>POST</code></td><td><code>/api/suggest</code></td><td>AI gợi ý 15 cost drivers</td></tr>
+        <tr><td><code>POST</code></td><td><code>/api/advise</code></td><td>AI phân tích kết quả chuyên sâu</td></tr>
+        <tr><td><code>POST</code></td><td><code>/api/chat</code></td><td>Chatbot multi-turn</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 3. COCOMO ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <div class="section-title">Mô hình toán học COCOMO</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: COCOMO là gì? Tại sao dùng Intermediate?</div>
+    <div class="answer">
+      <p><strong>COCOMO</strong> (Constructive Cost Model) do Barry Boehm đề xuất năm 1981. Có 3 mức:</p>
+      <ul>
+        <li><strong>Basic</strong>: Chỉ dựa vào KLOC, đơn giản nhất, độ chính xác thấp</li>
+        <li><strong>Intermediate</strong>: Thêm 15 cost drivers → chính xác hơn → <em>được chọn</em></li>
+        <li><strong>Detailed</strong>: Chi tiết theo từng phase, phức tạp hơn nhiều</li>
+      </ul>
+      <div class="callout">Intermediate được chọn vì cân bằng tốt giữa độ chính xác và tính thực tiễn cho scope dự án học thuật.</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Công thức tính toán cụ thể như thế nào?</div>
+    <div class="answer">
+      <p><strong>Bước 1</strong> — Xác định kích thước (KLOC):</p>
+      <ul>
+        <li>Nhập trực tiếp: KLOC</li>
+        <li>Hoặc chuyển đổi: <code>KLOC = FP × FP_per_SLOC(language) / 1000</code></li>
+      </ul>
+      <p><strong>Bước 2</strong> — Chọn hằng số theo loại dự án (Boehm 1981, Table 8.1):</p>
+      <table>
+        <tr><th>Mode</th><th>a</th><th>b</th><th>c</th><th>d</th></tr>
+        <tr><td>Organic</td><td>3.2</td><td>1.05</td><td>2.5</td><td>0.38</td></tr>
+        <tr><td>Semi-detached</td><td>3.0</td><td>1.12</td><td>2.5</td><td>0.35</td></tr>
+        <tr><td>Embedded</td><td>2.8</td><td>1.20</td><td>2.5</td><td>0.32</td></tr>
+      </table>
+      <p><strong>Bước 3 & 4</strong> — Áp dụng công thức:</p>
+      <div class="formula">
+        EAF  = RELY × DATA × CPLX × TIME × STOR × VIRT × TURN<br>
+               × ACAP × AEXP × PCAP × VEXP × LEXP × MODP × TOOL × SCED<br><br>
+        Effort (PM)    = a × KLOC^b × EAF<br>
+        TDEV (months)  = c × Effort^d<br>
+        Cost (USD)     = Effort × avg_salary<br>
+        Staff (people) = Effort / TDEV
+      </div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: 3 loại dự án (mode) khác nhau thế nào?</div>
+    <div class="answer">
+      <table>
+        <tr><th>Mode</th><th>Đặc điểm</th><th>Ví dụ</th></tr>
+        <tr><td><strong>Organic</strong></td><td>Nhóm nhỏ, kinh nghiệm tốt, yêu cầu linh hoạt</td><td>App nội bộ, script tự động</td></tr>
+        <tr><td><strong>Semi-detached</strong></td><td>Nhóm hỗn hợp, yêu cầu trung bình</td><td>ERP, web app doanh nghiệp</td></tr>
+        <tr><td><strong>Embedded</strong></td><td>Ràng buộc nghiêm ngặt hardware/realtime</td><td>Firmware, hệ thống điều khiển</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: EAF là gì? Giá trị EAF ảnh hưởng như thế nào?</div>
+    <div class="answer">
+      <p><strong>EAF</strong> (Effort Adjustment Factor) là tích của 15 cost driver multipliers.</p>
+      <ul>
+        <li>EAF = 1.0 → Baseline (tất cả Nominal)</li>
+        <li>EAF &gt; 1.0 → Effort thực tế <strong>cao hơn</strong> baseline</li>
+        <li>EAF &lt; 1.0 → Effort thực tế <strong>thấp hơn</strong> baseline</li>
+        <li>EAF &gt; 1.5 → Cảnh báo <span class="tag tag-red">HIGH RISK</span> áp lực đa chiều</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: 15 Cost Drivers là gì? Phân loại như thế nào?</div>
+    <div class="answer">
+      <table>
+        <tr><th>Nhóm</th><th>Drivers</th><th>Ý nghĩa</th></tr>
+        <tr><td><strong>Product</strong> (3)</td><td>RELY, DATA, CPLX</td><td>Đặc tính sản phẩm</td></tr>
+        <tr><td><strong>Computer</strong> (4)</td><td>TIME, STOR, VIRT, TURN</td><td>Ràng buộc phần cứng</td></tr>
+        <tr><td><strong>Personnel</strong> (6)</td><td>ACAP, AEXP, PCAP, VEXP, LEXP</td><td>Năng lực đội nhóm</td></tr>
+        <tr><td><strong>Project</strong> (3)</td><td>MODP, TOOL, SCED</td><td>Phương pháp và công cụ</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: FP Backfiring là gì?</div>
+    <div class="answer">
+      <p>Kỹ thuật chuyển đổi Function Points sang SLOC dựa trên ngôn ngữ lập trình (nguồn: QSM/ISBSG):</p>
+      <table>
+        <tr><th>Ngôn ngữ</th><th>SLOC/FP</th><th>Ngôn ngữ</th><th>SLOC/FP</th></tr>
+        <tr><td>Assembly</td><td>320</td><td>C#</td><td>58</td></tr>
+        <tr><td>C</td><td>128</td><td>Java</td><td>53</td></tr>
+        <tr><td>C++</td><td>64</td><td>JavaScript</td><td>47</td></tr>
+        <tr><td>Python</td><td>40</td><td>SQL</td><td>21</td></tr>
+        <tr><td>HTML</td><td>40</td><td></td><td></td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 4. AI ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <div class="section-title">Tích hợp AI</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: AI được tích hợp vào đâu trong hệ thống?</div>
+    <div class="answer">
+      <p>AI <strong>không thay thế</strong> toán học COCOMO, mà là lớp thông minh bổ sung cho 3 chức năng:</p>
+      <ul>
+        <li><strong>AI Suggest</strong> — Gợi ý 15 cost drivers từ mô tả dự án ngôn ngữ tự nhiên</li>
+        <li><strong>AI Advise</strong> — Phân tích chiến lược sau khi có kết quả COCOMO</li>
+        <li><strong>AI Chat</strong> — Chatbot multi-turn giải thích kết quả và tư vấn</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: AI Suggest hoạt động như thế nào?</div>
+    <div class="answer">
+      <ol>
+        <li>User nhập mô tả dự án bằng ngôn ngữ tự nhiên (tối thiểu 20 ký tự)</li>
+        <li>Backend build prompt chứa định nghĩa 15 cost drivers + valid ratings</li>
+        <li>Gửi lên Gemini với <code>temperature=0.3</code> (thấp → kết quả ổn định)</li>
+        <li>Gemini trả về JSON với <code>{rating, value, reasoning, confidence}</code> cho mỗi driver</li>
+        <li>Backend validate: nếu rating không hợp lệ → fallback về "Nominal"</li>
+        <li>Frontend cập nhật 15 dropdowns tự động</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Chatbot hoạt động thế nào? Nó "nhớ" được hội thoại như thế nào?</div>
+    <div class="answer">
+      <p>Chatbot <strong>không có database lưu lịch sử</strong>. Cách hoạt động:</p>
+      <ul>
+        <li>Mỗi lần user gửi tin nhắn → Frontend gửi <strong>toàn bộ lịch sử hội thoại</strong> lên backend</li>
+        <li>Backend đóng gói: System Instruction (vai trò + context dự án) + full message history</li>
+        <li>Gửi lên Gemini dưới dạng <code>Contents[]</code> (multi-turn format)</li>
+        <li>Gemini xử lý cả chuỗi → trả lời có tham chiếu ngữ cảnh trước</li>
+      </ul>
+      <div class="callout">Multi-turn được mô phỏng bằng cách replay lại toàn bộ lịch sử mỗi request — không phải Gemini "nhớ" session.</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Phân tích rủi ro dùng AI không?</div>
+    <div class="answer">
+      <p>Không hoàn toàn. Có <strong>2 tầng</strong> xử lý rủi ro:</p>
+      <ul>
+        <li><strong>Tầng 1 — Rule-based</strong> (<code>risk.py</code>): So sánh giá trị từng cost driver với ngưỡng cứng định sẵn → phân loại <span class="tag tag-red">HIGH</span> <span class="tag tag-yellow">MEDIUM</span> <span class="tag tag-green">LOW</span>. Đây là logic thuần Python, <em>không có AI</em>.</li>
+        <li><strong>Tầng 2 — LLM</strong> (<code>/api/advise</code>): Gemini phân tích tổng thể và đề xuất chiến lược giảm thiểu rủi ro trong báo cáo markdown.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Gemini được gọi với temperature bao nhiêu? Tại sao?</div>
+    <div class="answer">
+      <table>
+        <tr><th>Chức năng</th><th>Temperature</th><th>Lý do</th></tr>
+        <tr><td>AI Suggest</td><td><code>0.3</code></td><td>Thấp → ổn định, nhất quán (dữ liệu số cần chính xác)</td></tr>
+        <tr><td>AI Advise</td><td><code>0.6</code></td><td>Trung bình → cân bằng chính xác & đa dạng ý tưởng</td></tr>
+        <tr><td>AI Chat</td><td><code>0.7</code></td><td>Cao hơn → ngôn ngữ tự nhiên, linh hoạt hội thoại</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 5. GIAO DIỆN ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <div class="section-title">Giao diện và trải nghiệm</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Luồng sử dụng của người dùng?</div>
+    <div class="answer">
+      <ol>
+        <li><strong>Tab Project Setup</strong> → Nhập KLOC hoặc FP, chọn mode, nhập lương, (tùy chọn) mô tả dự án</li>
+        <li><strong>Tab Cost Drivers</strong> → Chỉnh 15 cost drivers thủ công, hoặc nhấn "AI Gợi ý"</li>
+        <li><strong>Nhấn "Tính toán COCOMO"</strong> → Gọi API, nhận kết quả, tự động chuyển sang tab Dashboard</li>
+        <li><strong>Tab Dashboard</strong> → Xem metric cards, 3 biểu đồ, risk panel; nhấn "Phân tích AI" để xem báo cáo</li>
+        <li><strong>Tab AI Chatbot</strong> → Hỏi đáp tự do, AI đã biết context dự án</li>
+        <li><strong>Export JSON</strong> → Tải file báo cáo đầy đủ về máy</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Dashboard hiển thị những gì?</div>
+    <div class="answer">
+      <ul>
+        <li><strong>6 Metric cards</strong>: Effort (PM), TDEV (months), Total Cost (USD), Team Size, EAF, Final KLOC</li>
+        <li><strong>Radar chart</strong>: EAF phân bổ theo 4 nhóm (Product / Computer / Personnel / Project)</li>
+        <li><strong>Bar chart</strong>: So sánh Baseline (EAF=1) vs Actual Effort</li>
+        <li><strong>Staff Gauge</strong>: Thanh gauge hiển thị số nhân sự cần thiết</li>
+        <li><strong>Risk Panel</strong>: Danh sách rủi ro HIGH/MEDIUM/LOW kèm khuyến nghị</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 6. TESTING ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <div class="section-title">Testing</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Hệ thống có test không? Test những gì?</div>
+    <div class="answer">
+      <p>Có unit tests cho <code>services/cocomo.py</code> bằng <strong>pytest</strong> (<code>backend/tests/test_cocomo.py</code>):</p>
+      <ul>
+        <li>Công thức Effort / TDEV / Cost / Staff đúng với hằng số Boehm</li>
+        <li>FP → KLOC backfiring conversion cho các ngôn ngữ</li>
+        <li>EAF = tích đúng của 15 multipliers</li>
+        <li>Invalid mode → raise <code>ValueError</code></li>
+        <li>Edge cases: KLOC cực nhỏ, EAF = 1.0 (all Nominal)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Tại sao chỉ test backend, không test frontend?</div>
+    <div class="answer">
+      <p>Backend chứa <strong>logic toán học quan trọng nhất</strong> cần xác minh chính xác. Frontend chủ yếu là UI/UX nên dùng manual testing. Đây là ưu tiên hợp lý cho scope dự án học thuật, tập trung vào correctness của core engine.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 7. ĐIỂM MẠNH / HẠN CHẾ ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <div class="section-title">Điểm mạnh và hạn chế</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Điểm mạnh</div>
+    <div class="answer">
+      <ul>
+        <li><span class="tag tag-green">Toán học</span> Áp dụng đúng Intermediate COCOMO theo Boehm 1981 (Table 8.1, 8.2)</li>
+        <li><span class="tag tag-green">AI thực chất</span> Gemini thực sự giảm bớt chủ quan trong chọn cost drivers</li>
+        <li><span class="tag tag-green">Kiến trúc</span> Frontend/Backend/Services tách biệt rõ ràng, dễ mở rộng</li>
+        <li><span class="tag tag-green">Dual input</span> Hỗ trợ cả KLOC lẫn FP với 9 ngôn ngữ backfiring</li>
+        <li><span class="tag tag-green">Risk tự động</span> Chạy song song với tính COCOMO, không cần thao tác thêm</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Hạn chế</div>
+    <div class="answer">
+      <ul>
+        <li><span class="tag tag-red">No DB</span> Không lưu lịch sử — mỗi phiên làm việc độc lập</li>
+        <li><span class="tag tag-red">API phụ thuộc</span> Mất kết nối Gemini → 3 chức năng AI ngừng hoạt động</li>
+        <li><span class="tag tag-red">No ML</span> Không học từ dữ liệu lịch sử dự án thực tế</li>
+        <li><span class="tag tag-red">COCOMO 1981</span> Có thể không phản ánh đặc thù phần mềm hiện đại</li>
+        <li><span class="tag tag-red">Chat</span> Reload trang → mất toàn bộ lịch sử chatbot</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 8. CÂU HỎI KHÓ ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <div class="section-title">Câu hỏi khó có thể bị hỏi</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: COCOMO có còn phù hợp với phần mềm hiện đại không?</div>
+    <div class="answer">
+      <p>COCOMO Intermediate (1981) được thiết kế cho phần mềm monolithic truyền thống. Với phần mềm hiện đại (microservices, cloud-native, agile), độ chính xác giảm vì:</p>
+      <ul>
+        <li>Khó xác định KLOC chính xác trước khi code (đặc biệt với agile)</li>
+        <li>Không tính đến yếu tố DevOps, CI/CD, cloud infrastructure cost</li>
+      </ul>
+      <div class="callout">Tuy nhiên nó vẫn là baseline tốt cho ước lượng ban đầu và so sánh các phương án. Đây chính là lý do AI được thêm vào để bổ trợ và giảm thiểu sai số chủ quan.</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Tại sao không dùng COCOMO II thay vì COCOMO Intermediate?</div>
+    <div class="answer">
+      <p>COCOMO II (1995) hiện đại hơn nhưng phức tạp hơn đáng kể với nhiều sub-model (Early Design, Post-Architecture). Scope dự án này là học thuật — mục tiêu là <strong>implement đúng một model</strong> và <strong>tích hợp AI một cách thực chất</strong>, nên Intermediate COCOMO là lựa chọn phù hợp về độ phức tạp.</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: AI có thể gợi ý sai không? Hệ thống xử lý thế nào?</div>
+    <div class="answer">
+      <p>Có. Hệ thống xử lý bằng 3 cơ chế:</p>
+      <ol>
+        <li><strong>Validate rating</strong>: Nếu AI trả về rating không hợp lệ → fallback về "Nominal"</li>
+        <li><strong>User override</strong>: Người dùng luôn có thể chỉnh lại thủ công bất kỳ driver nào</li>
+        <li><strong>Confidence field</strong>: AI tự đánh giá độ tin cậy (high/medium/low) cho mỗi gợi ý</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Validation đầu vào được xử lý ở đâu?</div>
+    <div class="answer">
+      <p>Có <strong>2 lớp validation</strong>:</p>
+      <ul>
+        <li><strong>Frontend</strong> (<code>App.jsx</code>): Kiểm tra KLOC/FP &gt; 0, salary &gt; 0 trước khi gọi API</li>
+        <li><strong>Backend</strong> (<code>schemas.py</code>, Pydantic): <code>Field(gt=0)</code>, kiểm tra mode hợp lệ, <code>min_length=20</code> cho description</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Q: Nếu không có mô tả dự án thì AI Suggest có chạy không?</div>
+    <div class="answer">
+      <p>Không. Backend kiểm tra description phải có ít nhất <strong>20 ký tự</strong>. Nếu thiếu, hệ thống trả về lỗi 400 Bad Request và frontend hiển thị thông báo yêu cầu nhập trong tab "Project Setup" trước.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 9. HƯỚNG PHÁT TRIỂN ══════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <div class="section-title">Hướng phát triển</div>
+  </div>
+
+  <div class="qa">
+    <div class="question">Các hướng phát triển tiếp theo</div>
+    <div class="answer">
+      <table>
+        <tr><th>#</th><th>Hướng</th><th>Mô tả</th></tr>
+        <tr><td>1</td><td><strong>Tự động trích xuất LOC/FP</strong></td><td>NLP đọc tài liệu SRS, tự ước tính kích thước dự án, loại bỏ nhập thủ công</td></tr>
+        <tr><td>2</td><td><strong>JIRA/GitHub integration</strong></td><td>So sánh Effort ước tính vs thực tế từ sprint data, xây dựng cơ chế ML tự học</td></tr>
+        <tr><td>3</td><td><strong>EVM integration</strong></td><td>Kết hợp Earned Value Management để cảnh báo overrun ngân sách real-time</td></tr>
+        <tr><td>4</td><td><strong>Database & Auth</strong></td><td>Lưu lịch sử dự án, so sánh nhiều ước lượng theo thời gian</td></tr>
+        <tr><td>5</td><td><strong>Nâng cấp COCOMO II</strong></td><td>Áp dụng model hiện đại hơn phù hợp với phần mềm agile</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center; margin-top:48px; padding-top:24px; border-top:1px solid #e2e8f0; color:#94a3b8; font-size:11px;">
+  COCOMO AI Estimator — Tài liệu kỹ thuật — 2026
+</div>
+
+</body>
+</html>
