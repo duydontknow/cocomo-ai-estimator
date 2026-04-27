@@ -99,3 +99,43 @@ class FPAIEstimateInput(BaseModel):
         description="Mô tả dự án để AI phân tích"
     )
     project_mode: str = Field("organic", description="Loại dự án")
+
+# ============================================================
+# /api/projects  (CRUD Dự án)
+# ============================================================
+from datetime import datetime
+
+class ProjectCreate(BaseModel):
+    """Thông tin đầu vào khi tạo dự án mới lưu vào database."""
+    name: str = Field(..., max_length=200, description="Tên dự án")
+    description: Optional[str] = Field(None, description="Mô tả dự án")
+    kloc: Optional[float] = None
+    fp: Optional[float] = None
+    language: Optional[str] = None
+    project_mode: str
+    cost_drivers: Dict[str, float]
+    avg_salary: float
+    effort: Optional[float] = None
+    time: Optional[float] = None
+    cost: Optional[float] = None
+
+class ProjectUpdate(BaseModel):
+    """Thông tin đầu vào khi cập nhật dự án."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    kloc: Optional[float] = None
+    fp: Optional[float] = None
+    language: Optional[str] = None
+    project_mode: Optional[str] = None
+    cost_drivers: Optional[Dict[str, float]] = None
+    avg_salary: Optional[float] = None
+    effort: Optional[float] = None
+    time: Optional[float] = None
+    cost: Optional[float] = None
+
+class ProjectResponse(ProjectCreate):
+    """Đối tượng dự án trả về từ database."""
+    id: str
+    user_id: str
+    created_at: datetime
+    updated_at: datetime

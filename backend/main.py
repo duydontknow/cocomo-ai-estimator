@@ -11,12 +11,16 @@ Endpoints:
   POST /api/chat                → AI Chatbot multi-turn
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from schemas import (
     ProjectInput, ProjectDescriptionInput, AIAdvisorInput, ChatRequest,
     FPCalculationInput, FPAIEstimateInput,
+    ProjectCreate, ProjectUpdate, ProjectResponse
 )
+from typing import List
+from dependencies import get_current_user
+from database import supabase
 from services.cocomo import calculate_cocomo
 from services.ai import suggest_cost_drivers, get_ai_advice, chat_with_ai
 from services.risk import analyze_risks
@@ -212,3 +216,75 @@ def estimate_fp_ai(data: FPAIEstimateInput):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi AI FP Estimation: {str(e)}")
+
+
+# ====================== PROJECT CRUD ======================
+
+@app.post("/api/projects", response_model=ProjectResponse)
+def create_project(project: ProjectCreate, current_user_id: str = Depends(get_current_user)):
+    """Tạo mới một dự án và lưu vào CSDL."""
+    try:
+        data = project.model_dump() if hasattr(project, "model_dump") else project.dict()
+        data["user_id"] = current_user_id
+        
+        # Gọi SDK Supabase
+        response = supabase.table("projects").insert(data).execute()
+        if response.data:
+            return response.data[0]
+        raise HTTPException(status_code=400, detail="Không thể tạo dự án")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/projects", response_model=List[ProjectResponse])
+def get_all_projects(current_user_id: str = Depends(get_current_user)):
+    """Lấy danh sách các dự án của phiên đăng nhập hiện tại."""
+    try:
+        response = supabase.table("projects").select("*").eq("user_id", current_user_id).order("created_at", desc=True).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/projects/{project_id}", response_model=ProjectResponse)
+def get_project(project_id: str, current_user_id: str = Depends(get_current_user)):
+    """Lấy chi tiết một dự án."""
+    try:
+        response = supabase.table("projects").select("*").eq("id", project_id).eq("user_id", current_user_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Không tìm thấy dự án")
+        return response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/projects/{project_id}", response_model=ProjectResponse)
+def update_project(project_id: str, project: ProjectUpdate, current_user_id: str = Depends(get_current_user)):
+    """Cập nhật thông tin dự án."""
+    try:
+        # Lọc ra các key none
+        project_dict = project.model_dump() if hasattr(project, "model_dump") else project.dict()
+        data = {k: v for k, v in project_dict.items() if v is not None}
+        if not data:
+            raise HTTPException(status_code=400, detail="Không có dữ liệu cập nhật")
+
+        response = supabase.table("projects").update(data).eq("id", project_id).eq("user_id", current_user_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Không tìm thấy dự án hoặc không có quyền sửa")
+        return response.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/projects/{project_id}")
+def delete_project(project_id: str, current_user_id: str = Depends(get_current_user)):
+    """Xóa dự án."""
+    try:
+        response = supabase.table("projects").delete().eq("id", project_id).eq("user_id", current_user_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Không tìm thấy dự án hoặc không có quyền xóa")
+        return {"status": "success", "message": "Đã xóa dự án thành công"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

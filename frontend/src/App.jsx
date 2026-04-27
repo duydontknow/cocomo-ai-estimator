@@ -10,6 +10,8 @@ import ProjectSetup, { calcUFP } from "./components/ProjectSetup";
 import CostDriverPanel from "./components/CostDriverPanel";
 import ResultsDashboard from "./components/ResultsDashboard";
 import AIChatbot from "./components/AIChatbot";
+import AuthModal from "./components/AuthModal";
+import { useAuth } from "./context/AuthContext";
 import "./App.css";
 
 // ─── Initial state helpers ──────────────────────────────────────────────
@@ -44,6 +46,8 @@ const TABS = [
 
 // ────────────────────────────────────────────────────────────────────────
 export default function App() {
+    const { user, session, logout } = useAuth();
+
     // ── State ────────────────────────────────────────────────────────
     const [activeTab, setActiveTab]       = useState("setup");
     const [setup, setSetup]               = useState(DEFAULT_SETUP);
@@ -58,11 +62,19 @@ export default function App() {
         return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
     });
 
-    // ── Theme ────────────────────────────────────────────────────────
+    // ── Theme & Axios Auth ───────────────────────────────────────────
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", theme);
         localStorage.setItem("cocomo-theme", theme);
     }, [theme]);
+
+    useEffect(() => {
+        if (session?.access_token) {
+            axios.defaults.headers.common["Authorization"] = `Bearer ${session.access_token}`;
+        } else {
+            delete axios.defaults.headers.common["Authorization"];
+        }
+    }, [session]);
 
     // ── Validate inputs ──────────────────────────────────────────────
     const validateInputs = useCallback(() => {
@@ -202,6 +214,14 @@ export default function App() {
         : null;
 
     // ── Render ───────────────────────────────────────────────────────
+    if (!user) {
+        return (
+            <div className="app-container" style={{ position: "relative", minHeight: "100vh" }}>
+                 <AuthModal />
+            </div>
+        );
+    }
+
     return (
         <div className="app-container">
             {/* ════ HEADER ════════════════════════════════════════════ */}
@@ -215,6 +235,18 @@ export default function App() {
                 </div>
 
                 <div className="header-right">
+                    <div className="header-summary" style={{ marginRight: '1rem', opacity: 0.9 }}>
+                        <span className="hs-item" style={{ marginRight: '10px' }}>
+                            <span className="hs-label" style={{ marginRight: '4px' }}>User:</span> 
+                            <strong>{user?.email}</strong>
+                        </span>
+                        <button 
+                            className="btn-primary" 
+                            style={{ padding: '4px 10px', fontSize: '0.85rem', background: 'var(--red-500, #ef4444)', borderColor: 'transparent' }} 
+                            onClick={logout}
+                        >Đăng xuất</button>
+                    </div>
+
                     {result && (
                         <div className="header-summary">
                             <span className="hs-item">
