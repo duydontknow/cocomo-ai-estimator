@@ -9,7 +9,7 @@ Modules:
 """
 
 from pydantic import BaseModel, Field
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List, Optional, Literal, Any
 
 # ============================================================
 # /api/estimate/cocomo
@@ -113,7 +113,7 @@ class ProjectCreate(BaseModel):
     fp: Optional[float] = None
     language: Optional[str] = None
     project_mode: str
-    cost_drivers: Dict[str, float]
+    cost_drivers: Dict[str, Any]
     avg_salary: float
     effort: Optional[float] = None
     time: Optional[float] = None
@@ -127,7 +127,7 @@ class ProjectUpdate(BaseModel):
     fp: Optional[float] = None
     language: Optional[str] = None
     project_mode: Optional[str] = None
-    cost_drivers: Optional[Dict[str, float]] = None
+    cost_drivers: Optional[Dict[str, Any]] = None
     avg_salary: Optional[float] = None
     effort: Optional[float] = None
     time: Optional[float] = None

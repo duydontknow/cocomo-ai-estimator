@@ -1,16 +1,18 @@
 // App.jsx — Main application entry point
 // Layout: Header + 2-column grid (Left: tabs config, Right: results/chat)
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, CheckCircle, AlertCircle, LogOut } from "lucide-react";
 import { COST_DRIVERS_META } from "./components/CostDriverPanel";
 import ProjectSetup, { calcUFP } from "./components/ProjectSetup";
 import CostDriverPanel from "./components/CostDriverPanel";
 import ResultsDashboard from "./components/ResultsDashboard";
 import AIChatbot from "./components/AIChatbot";
 import AuthModal from "./components/AuthModal";
+import SaveProjectModal from "./components/SaveProjectModal";
+import ProjectList from "./components/ProjectList";
 import { useAuth } from "./context/AuthContext";
 import "./App.css";
 
@@ -20,17 +22,17 @@ const DEFAULT_DRIVERS = Object.fromEntries(
 );
 
 const DEFAULT_SETUP = {
-    sizeType:     "KLOC",
-    kloc:         "10",
-    language:     "Python",
-    mode:         "organic",
-    salary:       "2000",
-    description:  "",
-    fpMode:       "manual",
+    sizeType: "KLOC",
+    kloc: "10",
+    language: "Python",
+    mode: "organic",
+    salary: "2000",
+    description: "",
+    fpMode: "manual",
     fpComponents: {
-        EI:  { simple: 0, average: 0, complex: 0 },
-        EO:  { simple: 0, average: 0, complex: 0 },
-        EQ:  { simple: 0, average: 0, complex: 0 },
+        EI: { simple: 0, average: 0, complex: 0 },
+        EO: { simple: 0, average: 0, complex: 0 },
+        EQ: { simple: 0, average: 0, complex: 0 },
         ILF: { simple: 0, average: 0, complex: 0 },
         EIF: { simple: 0, average: 0, complex: 0 },
     },
@@ -38,10 +40,11 @@ const DEFAULT_SETUP = {
 
 // ─── Tab definitions ────────────────────────────────────────────────────
 const TABS = [
-    { id: "setup",   label: "Project Setup",   desc: "KLOC, Mode, Lương" },
-    { id: "drivers", label: "Cost Drivers",    desc: "15 yếu tố COCOMO" },
-    { id: "results", label: "Dashboard",       desc: "Kết quả & biểu đồ" },
-    { id: "chat",    label: "AI Assistant",    desc: "Chatbot giải thích" },
+    { id: "setup", label: "Project Setup", desc: "KLOC, Mode, Lương" },
+    { id: "drivers", label: "Cost Drivers", desc: "15 yếu tố COCOMO" },
+    { id: "results", label: "Dashboard", desc: "Kết quả & biểu đồ" },
+    { id: "chat", label: "AI Assistant", desc: "Chatbot giải thích" },
+    { id: "projects", label: "My Projects", desc: "Lịch sử dự án" },
 ];
 
 // ────────────────────────────────────────────────────────────────────────
@@ -49,14 +52,30 @@ export default function App() {
     const { user, session, logout } = useAuth();
 
     // ── State ────────────────────────────────────────────────────────
-    const [activeTab, setActiveTab]       = useState("setup");
-    const [setup, setSetup]               = useState(DEFAULT_SETUP);
-    const [drivers, setDrivers]           = useState(DEFAULT_DRIVERS);
-    const [result, setResult]             = useState(null);
-    const [aiAdvice, setAiAdvice]         = useState("");
+    const [activeTab, setActiveTab] = useState("setup");
+    const [setup, setSetup] = useState(DEFAULT_SETUP);
+    const [drivers, setDrivers] = useState(DEFAULT_DRIVERS);
+    const [result, setResult] = useState(null);
+    const [aiAdvice, setAiAdvice] = useState("");
     const [isCalculating, setIsCalculating] = useState(false);
-    const [isAnalyzing, setIsAnalyzing]   = useState(false);
-    const [theme, setTheme]               = useState(() => {
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+    // Project Save/Load state
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Toast state
+    const [toast, setToast] = useState({ visible: false, message: "", type: "success" });
+    const toastTimeoutRef = useRef(null);
+
+    const showToast = (message, type = "success") => {
+        setToast({ visible: true, message, type });
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        toastTimeoutRef.current = setTimeout(() => {
+            setToast(prev => ({ ...prev, visible: false }));
+        }, 3000);
+    };
+    const [theme, setTheme] = useState(() => {
         const saved = localStorage.getItem("cocomo-theme");
         if (saved) return saved;
         return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
@@ -114,7 +133,7 @@ export default function App() {
     // ── Calculate COCOMO ─────────────────────────────────────────────
     const handleEstimate = async () => {
         const err = validateInputs();
-        if (err) { alert(err); return; }
+        if (err) { showToast(err, "error"); return; }
 
         setIsCalculating(true);
         setAiAdvice("");
@@ -129,11 +148,11 @@ export default function App() {
                 setResult(response.data.data);
                 setActiveTab("results"); // Auto-navigate to results
             } else {
-                alert("Lỗi: " + response.data.detail);
+                showToast("Lỗi: " + response.data.detail, "error");
             }
         } catch (error) {
             const msg = error.response?.data?.detail || "Backend không phản hồi. Kiểm tra server!";
-            alert("❌ " + msg);
+            showToast("❌ " + msg, "error");
         } finally {
             setIsCalculating(false);
         }
@@ -161,9 +180,100 @@ export default function App() {
             setAiAdvice(response.data.advice || "");
         } catch {
             setAiAdvice("❌ AI không phản hồi. Kiểm tra backend và API key.");
+            showToast("Lỗi kết nối đến AI Advisor", "error");
         } finally {
             setIsAnalyzing(false);
         }
+    };
+
+    // ── Project Management ───────────────────────────────────────────
+    const handleSaveProject = async (name, description) => {
+        setIsSaving(true);
+        try {
+            const payload = buildPayload();
+            const projectData = {
+                name,
+                description,
+                kloc: payload.kloc,
+                fp: payload.fp,
+                language: payload.language,
+                project_mode: payload.project_mode,
+                cost_drivers: {
+                    ...payload.cost_drivers,
+                    __fpComponents: setup.sizeType === "FP" ? setup.fpComponents : undefined,
+                    __aiAdvice: aiAdvice || undefined
+                },
+                avg_salary: payload.avg_salary,
+                effort: result?.effort_person_months,
+                time: result?.development_time_months,
+                cost: result?.estimated_cost
+            };
+
+            await axios.post("http://localhost:8000/api/projects", projectData);
+            showToast("Đã lưu dự án thành công!", "success");
+            setShowSaveModal(false);
+        } catch (error) {
+            const msg = error.response?.data?.detail || "Không thể lưu dự án. Thử lại sau.";
+            showToast("❌ " + msg, "error");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleLoadProject = (project) => {
+        // Restore drivers and extract internal __fpComponents if any
+        let loadedDrivers = project.cost_drivers || {};
+        let loadedFpComponents = null;
+        let loadedAiAdvice = "";
+
+        if (loadedDrivers.__fpComponents) {
+            loadedFpComponents = loadedDrivers.__fpComponents;
+            delete loadedDrivers.__fpComponents;
+        }
+
+        if (loadedDrivers.__aiAdvice) {
+            loadedAiAdvice = loadedDrivers.__aiAdvice;
+            delete loadedDrivers.__aiAdvice;
+        }
+
+        if (Object.keys(loadedDrivers).length > 0) {
+            setDrivers(loadedDrivers);
+        }
+
+        // Restore setup
+        setSetup(prev => ({
+            ...prev,
+            mode: project.project_mode || "organic",
+            salary: project.avg_salary ? String(project.avg_salary) : "2000",
+            description: project.description || "",
+            sizeType: project.kloc ? "KLOC" : "FP",
+            kloc: project.kloc ? String(project.kloc) : "10",
+            language: project.language || "Python",
+            ...(loadedFpComponents && { fpComponents: loadedFpComponents })
+        }));
+
+        // Restore result conceptually by recalculating or displaying saved stats
+        if (project.effort != null && project.time != null && project.cost != null) {
+            // Tái tạo lại EAF từ mảng drivers
+            const eaf = Object.values(loadedDrivers).reduce((acc, curr) => acc * parseFloat(curr), 1);
+
+            setResult({
+                final_kloc: project.kloc,
+                effort_person_months: project.effort,
+                development_time_months: project.time,
+                estimated_cost: project.cost,
+                eaf_applied: eaf.toFixed(2),
+                required_staff: Math.ceil(project.effort / project.time)
+            });
+            setActiveTab("results");
+            showToast(`Đã tải dự án "${project.name}". Xem kết quả ngay trên Dashboard!`, "info");
+        } else {
+            setResult(null);
+            setActiveTab("setup");
+            showToast(`Đã tải dự án "${project.name}". Vui lòng bấm Tính toán để xem lại kết quả.`, "info");
+        }
+
+        setAiAdvice(loadedAiAdvice);
     };
 
     // ── Export JSON ──────────────────────────────────────────────────
@@ -176,17 +286,17 @@ export default function App() {
                 sizeInput: setup.sizeType === "KLOC"
                     ? `${setup.kloc} KLOC`
                     : `${ufp} UFP (${setup.language})`,
-                finalKloc:    result?.final_kloc,
-                mode:         setup.mode,
-                avgSalary:    setup.salary,
-                costDrivers:  drivers,
-                description:  setup.description,
+                finalKloc: result?.final_kloc,
+                mode: setup.mode,
+                avgSalary: setup.salary,
+                costDrivers: drivers,
+                description: setup.description,
                 ...(setup.sizeType === "FP" && {
                     fpComponents: setup.fpComponents,
                     ufp,
                 }),
             },
-            results:    result,
+            results: result,
             aiInsights: aiAdvice,
         };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2));
@@ -201,23 +311,23 @@ export default function App() {
     // ── Chat context ─────────────────────────────────────────────────
     const chatContext = result
         ? {
-              kloc: result.final_kloc,
-              mode: setup.mode,
-              effort: result.effort_person_months,
-              time: result.development_time_months,
-              cost: result.estimated_cost,
-              eaf: result.eaf_applied,
-              cost_drivers: Object.fromEntries(
-                  Object.entries(drivers).map(([k, v]) => [k, parseFloat(v)])
-              ),
-          }
+            kloc: result.final_kloc,
+            mode: setup.mode,
+            effort: result.effort_person_months,
+            time: result.development_time_months,
+            cost: result.estimated_cost,
+            eaf: result.eaf_applied,
+            cost_drivers: Object.fromEntries(
+                Object.entries(drivers).map(([k, v]) => [k, parseFloat(v)])
+            ),
+        }
         : null;
 
     // ── Render ───────────────────────────────────────────────────────
     if (!user) {
         return (
             <div className="app-container" style={{ position: "relative", minHeight: "100vh" }}>
-                 <AuthModal />
+                <AuthModal />
             </div>
         );
     }
@@ -235,16 +345,25 @@ export default function App() {
                 </div>
 
                 <div className="header-right">
-                    <div className="header-summary" style={{ marginRight: '1rem', opacity: 0.9 }}>
-                        <span className="hs-item" style={{ marginRight: '10px' }}>
-                            <span className="hs-label" style={{ marginRight: '4px' }}>User:</span> 
-                            <strong>{user?.email}</strong>
-                        </span>
-                        <button 
-                            className="btn-primary" 
-                            style={{ padding: '4px 10px', fontSize: '0.85rem', background: 'var(--red-500, #ef4444)', borderColor: 'transparent' }} 
+                    <div className="user-profile-badge" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 14px', background: 'var(--panel-bg)', borderRadius: '30px', border: '1px solid var(--panel-border)', marginRight: '1rem', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+                        <div className="avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '1rem' }}>
+                            {user?.email?.charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Tài khoản</span>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {user?.email}
+                            </span>
+                        </div>
+                        <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 4px' }}></div>
+                        <button
+                            className="btn-icon"
+                            style={{ padding: '6px', color: 'var(--accent-red)', margin: 0 }}
                             onClick={logout}
-                        >Đăng xuất</button>
+                            title="Đăng xuất"
+                        >
+                            <LogOut size={16} strokeWidth={2.5} />
+                        </button>
                     </div>
 
                     {result && (
@@ -339,6 +458,11 @@ export default function App() {
                                 )}
                             </div>
                         )}
+                        {activeTab === "projects" && (
+                            <div className="side-summary">
+                                <p className="summary-hint">Quản lý lịch sử phân tích tĩnh và các dự án đã lưu.</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* ── Calculate Button ─────────────────────────── */}
@@ -358,9 +482,17 @@ export default function App() {
                     </div>
                 </aside>
 
-                {/* ── RIGHT: Dashboard / Chat ─────────────────────────── */}
+                {/* ── RIGHT: Dashboard / Chat / Projects ─────────────────────────── */}
                 <section className="right-panel">
-                    {activeTab === "chat" ? (
+                    {activeTab === "projects" ? (
+                        <div className="dashboard-wrapper">
+                            <div className="glass-panel" style={{ padding: '24px', marginBottom: '20px' }}>
+                                <h2 style={{ margin: '0 0 10px 0' }}>Dự án của tôi</h2>
+                                <p style={{ margin: 0, color: 'var(--text-muted)' }}>Quản lý và xem lại những setup, kết quả bạn đã lưu.</p>
+                            </div>
+                            <ProjectList onLoadProject={handleLoadProject} />
+                        </div>
+                    ) : activeTab === "chat" ? (
                         <AIChatbot projectContext={chatContext} />
                     ) : (
                         <div className="dashboard-wrapper">
@@ -369,7 +501,9 @@ export default function App() {
                                 drivers={drivers}
                                 onExport={handleExport}
                                 onAnalyze={handleAnalyze}
+                                onSave={() => setShowSaveModal(true)}
                                 isAnalyzing={isAnalyzing}
+                                isSaving={isSaving}
                             />
 
                             {/* AI Deep Analysis output */}
@@ -385,6 +519,21 @@ export default function App() {
                     )}
                 </section>
             </main>
+
+            {/* Modal & Overlays */}
+            {showSaveModal && (
+                <SaveProjectModal
+                    onClose={() => setShowSaveModal(false)}
+                    onSave={handleSaveProject}
+                    isSaving={isSaving}
+                />
+            )}
+
+            {/* Custom Toast Notification */}
+            <div className={`toast-container ${toast.type} ${toast.visible ? 'show' : ''}`}>
+                {toast.type === "success" ? <CheckCircle className="toast-icon" size={20} /> : <AlertCircle className="toast-icon" size={20} />}
+                <span className="toast-message">{toast.message}</span>
+            </div>
         </div>
     );
 }

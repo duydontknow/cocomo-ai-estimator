@@ -221,14 +221,16 @@ def estimate_fp_ai(data: FPAIEstimateInput):
 # ====================== PROJECT CRUD ======================
 
 @app.post("/api/projects", response_model=ProjectResponse)
-def create_project(project: ProjectCreate, current_user_id: str = Depends(get_current_user)):
+def create_project(project: ProjectCreate, auth_data: dict = Depends(get_current_user)):
     """Tạo mới một dự án và lưu vào CSDL."""
     try:
+        user_id = auth_data["user_id"]
+        user_client = auth_data["client"]
         data = project.model_dump() if hasattr(project, "model_dump") else project.dict()
-        data["user_id"] = current_user_id
+        data["user_id"] = user_id
         
-        # Gọi SDK Supabase
-        response = supabase.table("projects").insert(data).execute()
+        # Gọi SDK Supabase với client đã được xác thực
+        response = user_client.table("projects").insert(data).execute()
         if response.data:
             return response.data[0]
         raise HTTPException(status_code=400, detail="Không thể tạo dự án")
@@ -236,19 +238,23 @@ def create_project(project: ProjectCreate, current_user_id: str = Depends(get_cu
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/projects", response_model=List[ProjectResponse])
-def get_all_projects(current_user_id: str = Depends(get_current_user)):
+def get_all_projects(auth_data: dict = Depends(get_current_user)):
     """Lấy danh sách các dự án của phiên đăng nhập hiện tại."""
     try:
-        response = supabase.table("projects").select("*").eq("user_id", current_user_id).order("created_at", desc=True).execute()
+        user_id = auth_data["user_id"]
+        user_client = auth_data["client"]
+        response = user_client.table("projects").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/projects/{project_id}", response_model=ProjectResponse)
-def get_project(project_id: str, current_user_id: str = Depends(get_current_user)):
+def get_project(project_id: str, auth_data: dict = Depends(get_current_user)):
     """Lấy chi tiết một dự án."""
     try:
-        response = supabase.table("projects").select("*").eq("id", project_id).eq("user_id", current_user_id).execute()
+        user_id = auth_data["user_id"]
+        user_client = auth_data["client"]
+        response = user_client.table("projects").select("*").eq("id", project_id).eq("user_id", user_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail="Không tìm thấy dự án")
         return response.data[0]
@@ -258,16 +264,18 @@ def get_project(project_id: str, current_user_id: str = Depends(get_current_user
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/projects/{project_id}", response_model=ProjectResponse)
-def update_project(project_id: str, project: ProjectUpdate, current_user_id: str = Depends(get_current_user)):
+def update_project(project_id: str, project: ProjectUpdate, auth_data: dict = Depends(get_current_user)):
     """Cập nhật thông tin dự án."""
     try:
+        user_id = auth_data["user_id"]
+        user_client = auth_data["client"]
         # Lọc ra các key none
         project_dict = project.model_dump() if hasattr(project, "model_dump") else project.dict()
         data = {k: v for k, v in project_dict.items() if v is not None}
         if not data:
             raise HTTPException(status_code=400, detail="Không có dữ liệu cập nhật")
 
-        response = supabase.table("projects").update(data).eq("id", project_id).eq("user_id", current_user_id).execute()
+        response = user_client.table("projects").update(data).eq("id", project_id).eq("user_id", user_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail="Không tìm thấy dự án hoặc không có quyền sửa")
         return response.data[0]
@@ -277,10 +285,12 @@ def update_project(project_id: str, project: ProjectUpdate, current_user_id: str
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/projects/{project_id}")
-def delete_project(project_id: str, current_user_id: str = Depends(get_current_user)):
+def delete_project(project_id: str, auth_data: dict = Depends(get_current_user)):
     """Xóa dự án."""
     try:
-        response = supabase.table("projects").delete().eq("id", project_id).eq("user_id", current_user_id).execute()
+        user_id = auth_data["user_id"]
+        user_client = auth_data["client"]
+        response = user_client.table("projects").delete().eq("id", project_id).eq("user_id", user_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail="Không tìm thấy dự án hoặc không có quyền xóa")
         return {"status": "success", "message": "Đã xóa dự án thành công"}
