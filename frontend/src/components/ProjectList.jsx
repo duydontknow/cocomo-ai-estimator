@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FolderOpen, Trash2, Calendar, Clock, DollarSign, FileSpreadsheet, FileText } from "lucide-react";
+import { LANGUAGE_BACKFIRING } from "./ProjectSetup";
+
+function getProjectKloc(project) {
+    if (project.kloc) return Number(project.kloc);
+    if (project.fp && project.language) {
+        const factor = LANGUAGE_BACKFIRING[project.language] || 50;
+        return (project.fp * factor) / 1000;
+    }
+    return null;
+}
 
 export default function ProjectList({ onLoadProject }) {
     const [projects, setProjects] = useState([]);
@@ -41,7 +51,8 @@ export default function ProjectList({ onLoadProject }) {
     const exportToExcel = (project) => {
         // Dùng định dạng HTML Table ép sang đuôi Excel (.xls)
         // Đây là cách duy nhất "perfect" cho cả Tiếng Việt (Font) và Regional (Tránh gộp cột)
-        const kloc = project.kloc ? Number(project.kloc).toFixed(2) : "";
+        const kVal = getProjectKloc(project);
+        const kloc = kVal !== null ? kVal.toFixed(2) : "";
         const fp = project.fp ? Number(project.fp).toFixed(2) : "";
         const date = new Date(project.created_at).toLocaleDateString("vi-VN");
 
@@ -115,7 +126,8 @@ export default function ProjectList({ onLoadProject }) {
     };
 
     const exportToPDF = (project) => {
-        const kloc = project.kloc ? Number(project.kloc).toFixed(2) : "--";
+        const kVal = getProjectKloc(project);
+        const kloc = kVal !== null ? kVal.toFixed(2) : "--";
         const fp = project.fp ? Number(project.fp).toFixed(2) : "--";
         const date = new Date(project.created_at).toLocaleDateString("vi-VN", { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'numeric', year: 'numeric' });
         
@@ -306,7 +318,7 @@ export default function ProjectList({ onLoadProject }) {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Size</span>
-                            <strong style={{ color: 'var(--accent-yellow)' }}>{project.kloc ? Number(project.kloc).toFixed(2) : '--'} <span style={{ fontSize: '0.75rem', fontWeight: 'normal' }}>KLOC</span></strong>
+                            <strong style={{ color: 'var(--accent-yellow)' }}>{getProjectKloc(project) !== null ? getProjectKloc(project).toFixed(2) : '--'} <span style={{ fontSize: '0.75rem', fontWeight: 'normal' }}>KLOC</span></strong>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Time</span>

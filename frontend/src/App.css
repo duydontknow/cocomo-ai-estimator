@@ -2162,3 +2162,59 @@
     color: var(--text-main);
     font-weight: 800;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   RIGHT PANEL TABS
+═══════════════════════════════════════════════════════════════ */
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: calc(100vh - 120px);
+}
+
+.right-tab-nav {
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    box-shadow: var(--panel-shadow);
+}
+
+.right-tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.right-tab-btn:hover {
+    background: var(--panel-bg-2);
+    color: var(--text-main);
+}
+
+.right-tab-btn.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.right-tab-content {
+    flex: 1;
+    overflow-y: auto;
+    /* hide scrollbar */
+    scrollbar-width: none; 
+}
+
+.right-tab-content::-webkit-scrollbar {
+    display: none; 
+}

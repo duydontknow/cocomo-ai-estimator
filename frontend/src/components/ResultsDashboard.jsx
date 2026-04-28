@@ -79,7 +79,7 @@ function CustomBarTooltip({ active, payload, label }) {
     return null;
 }
 
-export default function ResultsDashboard({ result, drivers, onExport, onAnalyze, onSave, isAnalyzing, isSaving }) {
+export default function ResultsDashboard({ result, drivers, onExport, onExportPDF, onAnalyze, onSave, isAnalyzing, isSaving }) {
     if (!result) {
         return (
             <div className="empty-state">
@@ -254,7 +254,10 @@ export default function ResultsDashboard({ result, drivers, onExport, onAnalyze,
                 >
                     {isSaving ? <><span className="spinner" /> Đang xử lý...</> : "Lưu dự án"}
                 </button>
-                <button id="btn-export" className="btn-secondary" onClick={onExport} style={{ marginLeft: 'auto' }}>
+                <button id="btn-export-pdf" className="btn-secondary" onClick={onExportPDF} style={{ marginLeft: 'auto' }}>
+                    Xuất báo cáo PDF
+                </button>
+                <button id="btn-export" className="btn-secondary" onClick={onExport}>
                     Xuất báo cáo JSON
                 </button>
             </div>

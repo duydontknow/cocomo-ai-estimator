@@ -39,12 +39,15 @@ const DEFAULT_SETUP = {
 };
 
 // ─── Tab definitions ────────────────────────────────────────────────────
-const TABS = [
+const LEFT_TABS = [
     { id: "setup", label: "Project Setup", desc: "KLOC, Mode, Lương" },
     { id: "drivers", label: "Cost Drivers", desc: "15 yếu tố COCOMO" },
-    { id: "results", label: "Dashboard", desc: "Kết quả & biểu đồ" },
-    { id: "chat", label: "AI Assistant", desc: "Chatbot giải thích" },
-    { id: "projects", label: "My Projects", desc: "Lịch sử dự án" },
+];
+
+const RIGHT_TABS = [
+    { id: "results", label: "Dashboard" },
+    { id: "chat", label: "AI Assistant" },
+    { id: "projects", label: "My Projects" },
 ];
 
 // ────────────────────────────────────────────────────────────────────────
@@ -52,7 +55,8 @@ export default function App() {
     const { user, session, logout } = useAuth();
 
     // ── State ────────────────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState("setup");
+    const [leftTab, setLeftTab] = useState("setup");
+    const [rightTab, setRightTab] = useState("results");
     const [setup, setSetup] = useState(DEFAULT_SETUP);
     const [drivers, setDrivers] = useState(DEFAULT_DRIVERS);
     const [result, setResult] = useState(null);
@@ -146,7 +150,7 @@ export default function App() {
 
             if (response.data.status === "success") {
                 setResult(response.data.data);
-                setActiveTab("results"); // Auto-navigate to results
+                setRightTab("results"); // Auto-navigate to results
             } else {
                 showToast("Lỗi: " + response.data.detail, "error");
             }
@@ -194,7 +198,7 @@ export default function App() {
             const projectData = {
                 name,
                 description,
-                kloc: payload.kloc,
+                kloc: result?.final_kloc || payload.kloc,
                 fp: payload.fp,
                 language: payload.language,
                 project_mode: payload.project_mode,
@@ -265,11 +269,11 @@ export default function App() {
                 eaf_applied: eaf.toFixed(2),
                 required_staff: Math.ceil(project.effort / project.time)
             });
-            setActiveTab("results");
+            setRightTab("results");
             showToast(`Đã tải dự án "${project.name}". Xem kết quả ngay trên Dashboard!`, "info");
         } else {
             setResult(null);
-            setActiveTab("setup");
+            setRightTab("results");
             showToast(`Đã tải dự án "${project.name}". Vui lòng bấm Tính toán để xem lại kết quả.`, "info");
         }
 
@@ -306,6 +310,143 @@ export default function App() {
         document.body.appendChild(a);
         a.click();
         a.remove();
+    };
+
+    // ── Export PDF ──────────────────────────────────────────────────
+    const handleExportPDF = () => {
+        if (!result) return;
+        
+        const kloc = result.final_kloc ? Number(result.final_kloc).toFixed(2) : "--";
+        const ufp = setup.sizeType === "FP" ? calcUFP(setup.fpComponents) : "--";
+        const date = new Date().toLocaleDateString("vi-VN", { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'numeric', year: 'numeric' });
+        
+        let driversHtml = '';
+        let aiAdviceHtml = '';
+        
+        for (const [key, value] of Object.entries(drivers)) {
+            driversHtml += `<div class="driver-item"><span class="driver-key">${key}</span><span>${value}</span></div>`;
+        }
+        
+        if (aiAdvice) {
+            const formattedAi = aiAdvice.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br/>');
+            aiAdviceHtml = `
+                <div class="section">
+                    <div class="section-title">Đánh Giá Từ Chuyên Gia AI (AI Insights)</div>
+                    <div class="ai-insights">${formattedAi}</div>
+                </div>`;
+        }
+
+        const printContent = `
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <title>Báo Cáo COCOMO</title>
+            <style>
+                body { font-family: 'Inter', -apple-system, sans-serif; padding: 40px; color: #1e293b; line-height: 1.6; max-width: 900px; margin: 0 auto; }
+                .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #3b82f6; }
+                .title { font-size: 28px; font-weight: 800; color: #0f172a; margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+                .subtitle { font-size: 14px; color: #64748b; margin: 0; }
+                .section { margin-bottom: 30px; }
+                .section-title { font-size: 16px; font-weight: 700; color: #0f172a; border-left: 4px solid #3b82f6; padding-left: 12px; margin-bottom: 15px; text-transform: uppercase; }
+                .desc-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; font-size: 14px; color: #334155; }
+                
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
+                th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+                th { background-color: #f1f5f9; font-weight: 600; color: #475569; width: 35%; }
+                td { color: #0f172a; font-weight: 500; }
+                
+                .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+                .stat-card { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+                .stat-label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 5px; }
+                .stat-value { font-size: 22px; font-weight: 800; color: #2563eb; }
+                .stat-value.accent { color: #10b981; }
+                
+                .drivers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+                .driver-item { display: flex; justify-content: space-between; padding: 10px 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; }
+                .driver-key { font-weight: 700; color: #334155; }
+                
+                .ai-insights { background: #f0fdf4; padding: 20px; border-radius: 8px; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; white-space: pre-wrap; font-size: 14px; color: #166534; }
+                
+                @media print {
+                    body { padding: 0; max-width: 100%; } 
+                    .stat-card { border: 1px solid #cbd5e1 !important; break-inside: avoid; }
+                    .driver-item { border: 1px solid #e2e8f0 !important; break-inside: avoid; }
+                    .ai-insights { break-inside: avoid; }
+                    @page { margin: 2cm; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1 class="title">Báo Cáo Phân Tích COCOMO</h1>
+                <p class="subtitle">Trích xuất lúc: ${date}</p>
+            </div>
+
+            <div class="section">
+                <div class="card-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Effort (PM)</div>
+                        <div class="stat-value">${result.effort_person_months ? Number(result.effort_person_months).toFixed(2) : '--'}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Thời Gian (Tháng)</div>
+                        <div class="stat-value">${result.development_time_months ? Number(result.development_time_months).toFixed(2) : '--'}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Chi Phí ($)</div>
+                        <div class="stat-value accent">${result.estimated_cost ? Number(result.estimated_cost).toLocaleString() : '--'}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Quy mô KLOC</div>
+                        <div class="stat-value">${kloc}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Thông Tin Cơ Bản</div>
+                ${setup.description ? `<div class="desc-box" style="margin-bottom: 15px;">${setup.description.replace(/\n/g, '<br/>')}</div>` : ''}
+                <table>
+                    <tr><th>Loại dự án (Mode)</th><td>${setup.mode === 'organic' ? 'Organic' : setup.mode === 'semi-detached' ? 'Semi-detached' : 'Embedded'}</td></tr>
+                    <tr><th>Quy mô từ Function Points (UFP)</th><td>${ufp !== '--' ? ufp + ' UFP' : 'Không sử dụng FP'}</td></tr>
+                    <tr><th>Ngôn ngữ chuyển đổi / lập trình</th><td>${setup.sizeType === 'FP' ? setup.language : 'Không xác định'}</td></tr>
+                    <tr><th>Lương trung bình / người / tháng</th><td>$${setup.salary ? Number(setup.salary).toLocaleString() : '--'}</td></tr>
+                </table>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Hệ Số Chi Phí Thẩm Định (Cost Drivers)</div>
+                <div class="drivers-grid">
+                    ${driversHtml}
+                </div>
+            </div>
+
+            ${aiAdviceHtml}
+
+            <div style="text-align: center; margin-top: 50px; font-size: 12px; color: #94a3b8;">
+                <p>Báo cáo được sinh tự động từ Hệ thống Môi trường Ước lượng COCOMO AI.</p>
+            </div>
+
+            <script>
+                window.onload = () => {
+                    setTimeout(() => {
+                        window.print();
+                    }, 500);
+                };
+            </script>
+        </body>
+        </html>
+        `;
+
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.open();
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+        } else {
+            showToast('Vui lòng cho phép trình duyệt hiển thị pop-up để tải file PDF!', 'error');
+        }
     };
 
     // ── Chat context ─────────────────────────────────────────────────
@@ -402,12 +543,12 @@ export default function App() {
                 <aside className="left-panel glass-panel">
                     {/* Tab nav */}
                     <nav className="tab-nav">
-                        {TABS.map((tab) => (
+                        {LEFT_TABS.map((tab) => (
                             <button
                                 key={tab.id}
                                 id={`tab-${tab.id}`}
-                                className={`tab-btn ${activeTab === tab.id ? "active" : ""}`}
-                                onClick={() => setActiveTab(tab.id)}
+                                className={`tab-btn ${leftTab === tab.id ? "active" : ""}`}
+                                onClick={() => setLeftTab(tab.id)}
                             >
                                 <span className="tab-label">{tab.label}</span>
                                 <span className="tab-desc">{tab.desc}</span>
@@ -417,13 +558,13 @@ export default function App() {
 
                     {/* Tab content */}
                     <div className="tab-content">
-                        {activeTab === "setup" && (
+                        {leftTab === "setup" && (
                             <ProjectSetup
                                 values={setup}
                                 onChange={setSetup}
                             />
                         )}
-                        {activeTab === "drivers" && (
+                        {leftTab === "drivers" && (
                             <CostDriverPanel
                                 drivers={drivers}
                                 onChange={setDrivers}
@@ -431,37 +572,6 @@ export default function App() {
                                 mode={setup.mode}
                                 kloc={setup.sizeType === "KLOC" ? setup.kloc : null}
                             />
-                        )}
-                        {activeTab === "results" && (
-                            <div className="side-summary">
-                                {result ? (
-                                    <>
-                                        <p className="summary-hint">Kết quả đã tính. Xem Dashboard bên phải.</p>
-                                        <div className="summary-mini">
-                                            <div className="sm-row"><span>KLOC</span><strong>{result.final_kloc}</strong></div>
-                                            <div className="sm-row"><span>EAF</span><strong>{result.eaf_applied}</strong></div>
-                                            <div className="sm-row"><span>Effort</span><strong>{result.effort_person_months} PM</strong></div>
-                                            <div className="sm-row"><span>Time</span><strong>{result.development_time_months} M</strong></div>
-                                            <div className="sm-row"><span>Staff</span><strong>{result.required_staff} người</strong></div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <p className="summary-hint">Chưa có kết quả. Hãy tính toán COCOMO trước.</p>
-                                )}
-                            </div>
-                        )}
-                        {activeTab === "chat" && (
-                            <div className="side-summary">
-                                <p className="summary-hint">Chat AI ở bên phải. Hỏi về kết quả COCOMO, cost drivers, strategies...</p>
-                                {!result && (
-                                    <p className="summary-hint warn">Tính toán COCOMO trước để AI có context cụ thể.</p>
-                                )}
-                            </div>
-                        )}
-                        {activeTab === "projects" && (
-                            <div className="side-summary">
-                                <p className="summary-hint">Quản lý lịch sử phân tích tĩnh và các dự án đã lưu.</p>
-                            </div>
                         )}
                     </div>
 
@@ -484,39 +594,50 @@ export default function App() {
 
                 {/* ── RIGHT: Dashboard / Chat / Projects ─────────────────────────── */}
                 <section className="right-panel">
-                    {activeTab === "projects" ? (
-                        <div className="dashboard-wrapper">
-                            <div className="glass-panel" style={{ padding: '24px', marginBottom: '20px' }}>
-                                <h2 style={{ margin: '0 0 10px 0' }}>Dự án của tôi</h2>
-                                <p style={{ margin: 0, color: 'var(--text-muted)' }}>Quản lý và xem lại những setup, kết quả bạn đã lưu.</p>
-                            </div>
-                            <ProjectList onLoadProject={handleLoadProject} />
-                        </div>
-                    ) : activeTab === "chat" ? (
-                        <AIChatbot projectContext={chatContext} />
-                    ) : (
-                        <div className="dashboard-wrapper">
-                            <ResultsDashboard
-                                result={result}
-                                drivers={drivers}
-                                onExport={handleExport}
-                                onAnalyze={handleAnalyze}
-                                onSave={() => setShowSaveModal(true)}
-                                isAnalyzing={isAnalyzing}
-                                isSaving={isSaving}
-                            />
+                    <div className="right-tab-nav">
+                        {RIGHT_TABS.map((tab) => (
+                            <button
+                                key={tab.id}
+                                className={`right-tab-btn ${rightTab === tab.id ? "active" : ""}`}
+                                onClick={() => setRightTab(tab.id)}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
 
-                            {/* AI Deep Analysis output */}
-                            {aiAdvice && (
-                                <div className="glass-panel ai-advice-panel">
-                                    <h3 className="ai-advice-title">Phân tích AI chuyên sâu</h3>
-                                    <div className="ai-advice markdown-body">
-                                        <ReactMarkdown>{aiAdvice}</ReactMarkdown>
+                    <div className="right-tab-content">
+                        {rightTab === "projects" ? (
+                            <div className="dashboard-wrapper">
+                                <ProjectList onLoadProject={handleLoadProject} />
+                            </div>
+                        ) : rightTab === "chat" ? (
+                            <AIChatbot projectContext={chatContext} />
+                        ) : (
+                            <div className="dashboard-wrapper">
+                                <ResultsDashboard
+                                    result={result}
+                                    drivers={drivers}
+                                    onExport={handleExport}
+                                    onExportPDF={handleExportPDF}
+                                    onAnalyze={handleAnalyze}
+                                    onSave={() => setShowSaveModal(true)}
+                                    isAnalyzing={isAnalyzing}
+                                    isSaving={isSaving}
+                                />
+
+                                {/* AI Deep Analysis output */}
+                                {aiAdvice && (
+                                    <div className="glass-panel ai-advice-panel">
+                                        <h3 className="ai-advice-title">Phân tích AI chuyên sâu</h3>
+                                        <div className="ai-advice markdown-body">
+                                            <ReactMarkdown>{aiAdvice}</ReactMarkdown>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </section>
             </main>
 
