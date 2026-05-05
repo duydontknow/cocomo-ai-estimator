@@ -79,7 +79,7 @@ function CustomBarTooltip({ active, payload, label }) {
     return null;
 }
 
-export default function ResultsDashboard({ result, drivers, onExport, onAnalyze, isAnalyzing }) {
+export default function ResultsDashboard({ result, drivers, onExport, onExportPDF, onAnalyze, onSave, isAnalyzing, isSaving }) {
     if (!result) {
         return (
             <div className="empty-state">
@@ -233,7 +233,7 @@ export default function ResultsDashboard({ result, drivers, onExport, onAnalyze,
             )}
 
             {/* ══ ROW 4: Action Buttons ════════════════════════════════ */}
-            <div className="glass-panel action-panel">
+            <div className="glass-panel action-panel" style={{ display: 'flex', gap: '12px' }}>
                 <button
                     id="btn-analyze"
                     className="btn-primary btn-ai-analyze"
@@ -245,6 +245,17 @@ export default function ResultsDashboard({ result, drivers, onExport, onAnalyze,
                     ) : (
                         "Phân tích AI chuyên sâu"
                     )}
+                </button>
+                <button 
+                    className="btn-primary" 
+                    onClick={onSave}
+                    disabled={isSaving}
+                    style={{ background: 'var(--primary)', flex: '0 1 auto' }}
+                >
+                    {isSaving ? <><span className="spinner" /> Đang xử lý...</> : "Lưu dự án"}
+                </button>
+                <button id="btn-export-pdf" className="btn-secondary" onClick={onExportPDF} style={{ marginLeft: 'auto' }}>
+                    Xuất báo cáo PDF
                 </button>
                 <button id="btn-export" className="btn-secondary" onClick={onExport}>
                     Xuất báo cáo JSON

@@ -60,7 +60,19 @@ const PROJECT_MODE_INFO = {
     },
 };
 
-const LANGUAGES = ["Python", "Java", "C++", "C#", "JavaScript", "C", "Assembly", "SQL", "HTML"];
+export const LANGUAGE_BACKFIRING = {
+    "Assembly":   320,
+    "C":          128,
+    "HTML":        40,
+    "C++":         64,
+    "Java":        53,
+    "Python":      40,
+    "C#":          58,
+    "SQL":         21,
+    "JavaScript":  47,
+};
+
+const LANGUAGES = Object.keys(LANGUAGE_BACKFIRING).sort();
 
 // ═════════════════════════════════════════════════════════════════════════
 // Sub-component: FP Manual Calculator (bảng 5×3)
@@ -299,6 +311,11 @@ export default function ProjectSetup({ values, onChange }) {
 
     const modeInfo = PROJECT_MODE_INFO[values.mode] || PROJECT_MODE_INFO.organic;
 
+    // Tính toán KLOC trực tiếp nếu đang ở chế độ FP
+    const ufp = values.sizeType === "FP" ? calcUFP(values.fpComponents) : 0;
+    const langFactor = LANGUAGE_BACKFIRING[values.language] || 50;
+    const estimatedKloc = ufp > 0 ? (ufp * langFactor / 1000).toFixed(2) : 0;
+
     return (
         <div className="setup-form">
             {/* ── Sizing Method ─────────────────────────────────── */}
@@ -399,6 +416,19 @@ export default function ProjectSetup({ values, onChange }) {
                                 <option key={lang} value={lang}>{lang}</option>
                             ))}
                         </select>
+                        {ufp > 0 && (
+                            <div className="mode-info-card" style={{ marginTop: '12px', background: 'var(--primary-light)', borderColor: 'var(--primary)', color: 'var(--primary)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>KLOC tương đương:</span>
+                                    <span style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: '"JetBrains Mono", monospace' }}>
+                                        {estimatedKloc}
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: '0.72rem', opacity: 0.85, marginTop: '4px' }}>
+                                    Công thức: ({ufp} UFP × {langFactor} SLOC/{values.language}) / 1000
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </>
             )}
